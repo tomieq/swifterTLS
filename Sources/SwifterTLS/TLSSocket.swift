@@ -1,4 +1,5 @@
 import Swifter
+import SwiftExtensions
 import Foundation
 
 public class TLSSocket: SecureSocket {
@@ -11,6 +12,13 @@ public class TLSSocket: SecureSocket {
     public required init(_ socket: Socket) {
         print("New socket")
         self.socket = socket
+        
+        do {
+            let clientHello = try ClientHello(socket)
+            socket.close()
+        } catch {
+            print("Error \(error)")
+        }
     }
     
     public func read() throws -> UInt8 {

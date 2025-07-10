@@ -1,5 +1,5 @@
 {
-  "originHash" : "74707b13b13272799d97d1237b4d3db87b400a7b66be874439a74963749a1be9",
+  "originHash" : "c88649929e04775f3b71dde23ab675b125dcdc7f9fa29e30d1859a1ec3df703f",
   "pins" : [
     {
       "identity" : "swifter",
@@ -8,6 +8,15 @@
       "state" : {
         "branch" : "tls",
         "revision" : "a2620ba078d335d21d0317ad216b7206e0300567"
+      }
+    },
+    {
+      "identity" : "swiftextensions",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/tomieq/SwiftExtensions",
+      "state" : {
+        "revision" : "f6c7ca1d30cd35dd8ca463106911cf364c69a872",
+        "version" : "1.1.2"
       }
     }
   ],

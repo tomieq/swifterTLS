@@ -14,7 +14,8 @@ let package = Package(
                     targets: ["Demo"])
     ],
     dependencies: [
-        .package(url: "https://github.com/tomieq/swifter.git", branch: "tls")
+        .package(url: "https://github.com/tomieq/swifter.git", branch: "tls"),
+        .package(url: "https://github.com/tomieq/SwiftExtensions", from: "1.0.0")
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -22,7 +23,8 @@ let package = Package(
         .target(
             name: "SwifterTLS",
             dependencies: [
-                .product(name: "Swifter", package: "Swifter")
+                .product(name: "Swifter", package: "Swifter"),
+                .product(name: "SwiftExtensions", package: "SwiftExtensions")
             ]),
         .testTarget(
             name: "SwifterTLSTests",
