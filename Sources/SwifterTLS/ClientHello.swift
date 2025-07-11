@@ -61,7 +61,7 @@ class ClientHello {
         var extensions: [TLSExtension] = []
         while extensionsData.isEmpty.not {
             TLSExtension(type: extensionsData.consume(bytes: 2),
-                        body: extensionsData.consume(bytes: 2))
+                         body: extensionsData.consume(bytes: try extensionsData.consume(bytes: 2).int))
             .convert {
                 extensions.append($0)
             }

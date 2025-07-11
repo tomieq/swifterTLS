@@ -34,7 +34,7 @@ extension KeyNamedGroup {
 }
 
 extension KeyNamedGroup {
-    var string: String {
+    var asString: String {
         "\(self)".components(separatedBy: ".").last ?? "\(self)"
     }
 }

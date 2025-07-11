@@ -7,7 +7,7 @@
 import Foundation
 import SwiftExtensions
 
-class TLSExtension {
+struct TLSExtension {
     let type: Data
     let body: Data
     
@@ -16,9 +16,9 @@ class TLSExtension {
         self.body = body
     }
 
-    lazy var name: ExtensionName? = {
-        Optional { try type.uInt16 }.map(ExtensionName.init).or(nil)
-    }()
+    var name: ExtensionName? {
+       ExtensionName(data: type)
+    }
 }
 
 extension TLSExtension: Convertible {}
