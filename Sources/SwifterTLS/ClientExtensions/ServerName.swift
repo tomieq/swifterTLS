@@ -23,7 +23,7 @@ extension ClientHello {
                     var body = $0.body
                     var names: [ServerName] = []
                     let bodyLenght = try body.consume(bytes: 2).uInt16
-                    guard bodyLenght > 3 else {
+                    guard bodyLenght == body.count else {
                         return names
                     }
                     while body.isEmpty.not {

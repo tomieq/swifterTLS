@@ -5,11 +5,8 @@ import SwifterTLS
 
 let server = HttpServer()
 server.secureSocketType = TLSSocket.self
-try server.start(8080, forceIPv4: true)
+try server.start(8082, forceIPv4: true)
 
-server.metrics.onOpenConnectionsChanged = { number in
-    print("amount of connections: \(number)")
-}
 server.middleware.append { request, header in
     print("Request \(request.id) \(request.method) \(request.path) from \(request.clientIP ?? "")")
     request.onFinished { summary in

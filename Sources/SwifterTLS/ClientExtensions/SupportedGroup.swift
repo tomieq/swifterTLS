@@ -13,7 +13,7 @@ extension ClientHello {
                     var body = $0.body
                     var groups: [KeyNamedGroup] = []
                     let bodyLenght = try body.consume(bytes: 2).uInt16
-                    guard bodyLenght > 0 else {
+                    guard bodyLenght == body.count else {
                         return groups
                     }
                     while body.isEmpty.not {
