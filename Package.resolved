@@ -1,5 +1,5 @@
 {
-  "originHash" : "23307bd4f6db9113c3e96e1c10ae85f8f7291db9d08147489081bb65d5512edf",
+  "originHash" : "83eb0c34d0c823f10aa6e59e645854826528bd5709003fdbc6124576f008ffbd",
   "pins" : [
     {
       "identity" : "swift-asn1",
@@ -25,7 +25,7 @@
       "location" : "https://github.com/tomieq/swifter.git",
       "state" : {
         "branch" : "tls",
-        "revision" : "55a421d07dc1f1790eadeaddf80de9554a2d7551"
+        "revision" : "54677fb6db3c4eff37049ffbf2831f97be6b7b9e"
       }
     },
     {

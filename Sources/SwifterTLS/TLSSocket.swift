@@ -9,6 +9,7 @@ public class TLSSocket: SecureSocket {
     private var writeCipher: TLS13CipherState?
     private var plaintextBuffer = Data()
 
+    public let id: UUID = UUID()
     public var raw: Socket {
         socket
     }
