@@ -27,12 +27,12 @@ extension ClientHello {
                         return names
                     }
                     while body.isEmpty.not {
-                        // 2 bytes - name type
-                        // 1 byte - name length
+                        // 1 byte - name type
+                        // 2 bytes - name length
                         // n bytes - name
-                        let nameType = ServerNameType(data: body.consume(bytes: 2))
-                        let nameSize = try body.consume(bytes: 1).uInt8
-                        let name = String(data: body.consume(bytes: Int(nameSize)), encoding: .utf8)
+                        let nameType = ServerNameType(rawValue: UInt16(try body.consume(bytes: 1).uInt8))
+                        let nameSize = try body.consume(bytes: 2).int
+                        let name = String(data: body.consume(bytes: nameSize), encoding: .utf8)
                         if let nameType, let name {
                             names.append(ServerName(nameType: nameType, serverName: name))
                         }

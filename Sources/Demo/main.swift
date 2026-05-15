@@ -14,6 +14,9 @@ server.middleware.append { request, header in
     }
     return nil
 }
+server.get["/"] = { request, headers in
+        .ok(.text("Hello, World!"))
+}
 Process.watchSignals{ _ in
     server.stop()
 }
