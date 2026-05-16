@@ -57,7 +57,7 @@ class ClientHello {
         supportedCiphers = ciphers
         // compression methods
         let compressionMethodsData = body.consume(bytes: try body.consume(bytes: 1).int)
-        compressionMethods = compressionMethodsData.bytes.compactMap { CompressionMethod(rawValue: $0) }
+        compressionMethods = compressionMethodsData.array.compactMap { CompressionMethod(rawValue: $0) }
         // extensions
         var extensionsData = body.consume(bytes: try body.consume(bytes: 2).int)
         var extensions: [TLSExtension] = []

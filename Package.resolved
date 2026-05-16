@@ -1,5 +1,5 @@
 {
-  "originHash" : "5f8c9722f010f4363d0009692dea12e34c611848225eb5dff43afa4afc75a315",
+  "originHash" : "22c979fa5b1e053a61f168d858688eafca57abc96156d0e122a1e809e4e8e847",
   "pins" : [
     {
       "identity" : "swift-asn1",
@@ -34,7 +34,7 @@
       "location" : "https://github.com/tomieq/SwiftExtensions",
       "state" : {
         "branch" : "master",
-        "revision" : "a8d8a30ec760a10f9f9e93cf3e291d38001657c0"
+        "revision" : "f3c8b038ff2d44ec600316cab07326a69b4c79cf"
       }
     }
   ],
