@@ -75,13 +75,13 @@ public class TLSSocket: SecureSocket {
 
         let tlsConfiguration = try Self.currentConfiguration()
         let certificatePrivateKey = try P256.Signing.PrivateKey(derRepresentation: PEMDecoder.decode(tlsConfiguration.privateKeyPEM))
-        let certificateDER = try PEMDecoder.decode(tlsConfiguration.certificatePEM)
+        let certificateDERChain = try PEMDecoder.decodeCertificates(tlsConfiguration.certificatePEM)
 
         let encryptedExtensions = TLS13HandshakeMessage.encryptedExtensions()
         try sendEncryptedHandshake(encryptedExtensions, using: &serverHandshakeCipher)
         transcript.append(encryptedExtensions)
 
-        let certificate = TLS13HandshakeMessage.certificate(derCertificate: certificateDER)
+        let certificate = TLS13HandshakeMessage.certificate(derCertificates: certificateDERChain)
         try sendEncryptedHandshake(certificate, using: &serverHandshakeCipher)
         transcript.append(certificate)
 

@@ -154,15 +154,23 @@ enum TLS13HandshakeMessage {
         return handshake(type: .encryptedExtensions, message: message)
     }
 
-    static func certificate(derCertificate: Data) -> Data {
-        let certificateEntry = Data()
-            .appending(asThreeBytes: derCertificate.count)
-            .appending(derCertificate)
-            .appending(asTwoBytes: 0)
+    static func certificate(derCertificates: [Data]) -> Data {
+        let certificateEntry = derCertificates.reduce(into: Data()) { entries, derCertificate in
+            entries.append(
+                Data()
+                    .appending(asThreeBytes: derCertificate.count)
+                    .appending(derCertificate)
+                    .appending(asTwoBytes: 0)
+            )
+        }
         let message = Data([0])
             .appending(asThreeBytes: certificateEntry.count)
             .appending(certificateEntry)
         return handshake(type: .certificate, message: message)
+    }
+
+    static func certificate(derCertificate: Data) -> Data {
+        certificate(derCertificates: [derCertificate])
     }
 
     static func certificateVerify(privateKey: P256.Signing.PrivateKey, transcriptHash: Data) throws -> Data {
@@ -188,19 +196,7 @@ enum TLS13HandshakeMessage {
     }
 }
 
-enum PEMDecoder {
-    static func decode(_ pem: String) throws -> Data {
-        let base64 = pem
-            .split(separator: "\n")
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.hasPrefix("-----") && !$0.isEmpty }
-            .joined()
-        guard let data = Data(base64Encoded: base64) else {
-            throw TLS13Error.invalidPEM
-        }
-        return data
-    }
-}
+
 
 extension SymmetricKey {
     var data: Data {
