@@ -37,8 +37,9 @@ private let tlsConfiguration = TLSConfiguration(
 )
 
 let server = HttpServer()
-TLSSocket.configure(tlsConfiguration)
-server.secureSocketType = TLSSocket.self
+server.secureSocketFactory = { socket in
+    TLSSocket(socket, tlsConfiguration: tlsConfiguration)
+}
 try server.start(8082, forceIPv4: true)
 
 server.middleware.append { request, header in

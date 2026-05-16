@@ -4,8 +4,7 @@ import SwiftExtensions
 import Swifter
 
 public class TLSSocket: SecureSocket {
-    private static let configurationLock = NSLock()
-    private static var configuredTLSConfiguration: TLSConfiguration?
+    private let tlsConfiguration: TLSConfiguration
 
     private let socket: Socket
     private var readCipher: TLS13CipherState?
@@ -17,14 +16,9 @@ public class TLSSocket: SecureSocket {
         socket
     }
 
-    public static func configure(_ configuration: TLSConfiguration) {
-        configurationLock.lock()
-        configuredTLSConfiguration = configuration
-        configurationLock.unlock()
-    }
-
-    public required init(_ socket: Socket) {
+    public init(_ socket: Socket, tlsConfiguration: TLSConfiguration) {
         self.socket = socket
+        self.tlsConfiguration = tlsConfiguration
         do {
             try performHandshake()
         } catch {
@@ -73,7 +67,6 @@ public class TLSSocket: SecureSocket {
         var clientHandshakeCipher = TLS13CipherState(keySet: TLS13KeySchedule.keySet(trafficSecret: handshakeSecrets.client))
         var serverHandshakeCipher = TLS13CipherState(keySet: TLS13KeySchedule.keySet(trafficSecret: handshakeSecrets.server))
 
-        let tlsConfiguration = try Self.currentConfiguration()
         let certificatePrivateKey = try P256.Signing.PrivateKey(derRepresentation: PEMDecoder.decode(tlsConfiguration.privateKeyPEM))
         let certificateDERChain = try PEMDecoder.decodeCertificates(tlsConfiguration.certificatePEM)
 
@@ -127,15 +120,6 @@ public class TLSSocket: SecureSocket {
         guard try clientHello.signatureAlgorithms.contains(TLS13HandshakeMessage.ecdsaSecp256r1Sha256) else {
             throw TLS13Error.unsupportedSignatureScheme
         }
-    }
-
-    private static func currentConfiguration() throws -> TLSConfiguration {
-        configurationLock.lock()
-        defer { configurationLock.unlock() }
-        guard let configuredTLSConfiguration else {
-            throw TLS13Error.missingConfiguration
-        }
-        return configuredTLSConfiguration
     }
 
     private func sendEncryptedHandshake(_ handshakeMessage: Data, using cipher: inout TLS13CipherState) throws {
