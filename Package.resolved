@@ -1,5 +1,5 @@
 {
-  "originHash" : "6b0db5ee18e8e92e53795cabdc84881b2203e56f7dd1c4e4a421f103a7989e9b",
+  "originHash" : "22c979fa5b1e053a61f168d858688eafca57abc96156d0e122a1e809e4e8e847",
   "pins" : [
     {
       "identity" : "swift-asn1",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/tomieq/swifter.git",
       "state" : {
-        "branch" : "tls",
-        "revision" : "a2620ba078d335d21d0317ad216b7206e0300567"
+        "revision" : "34a0781c120ceccf3dc263e0d7875dad9554dac3",
+        "version" : "3.2.0"
       }
     },
     {
@@ -34,7 +34,7 @@
       "location" : "https://github.com/tomieq/SwiftExtensions",
       "state" : {
         "branch" : "master",
-        "revision" : "a8d8a30ec760a10f9f9e93cf3e291d38001657c0"
+        "revision" : "f3c8b038ff2d44ec600316cab07326a69b4c79cf"
       }
     }
   ],

@@ -17,6 +17,7 @@ enum ClientHelloError: Error {
 
 class ClientHello {
     let record: Record
+    let handshakeData: Data
     let clientHelloVersion: TLSVersion
     let random: Data
     let sessionID: Data
@@ -26,25 +27,26 @@ class ClientHello {
     
     init(_ socket: Socket) throws {
         record = try Record(socket: socket, maxLength: .KB(5))
+        handshakeData = record.body
+        var body = record.body
         // make sure it is handshake message
         guard record.recordType == .handshake else {
             throw ClientHelloError.expectedHandshakeMessage
         }
         // make sure it is client hello
-        guard record.body.consume(bytes: 1) == HandshakeType.clientHello else {
+        guard body.consume(bytes: 1) == HandshakeType.clientHello else {
             throw ClientHelloError.expectedClientHello
         }
         // make sure length matches the body count
-        guard record.body.consume(bytes: 3) == record.body.count else {
+        guard try body.consume(bytes: 3).int == body.count else {
             throw ClientHelloError.invalidBodyLength
         }
-        clientHelloVersion = try TLSVersion(data: record.body.consume(bytes: 2))
+        clientHelloVersion = try TLSVersion(data: body.consume(bytes: 2))
             .orThrow(ClientHelloError.unknownVersion)
-        print(clientHelloVersion)
-        random = record.body.consume(bytes: 32)
-        sessionID = record.body.consume(bytes: try record.body.consume(bytes: 1).int)
+        random = body.consume(bytes: 32)
+        sessionID = body.consume(bytes: try body.consume(bytes: 1).int)
         // supported ciphers
-        var cipherData = record.body.consume(bytes: try record.body.consume(bytes: 2).int)
+        var cipherData = body.consume(bytes: try body.consume(bytes: 2).int)
         var ciphers: [CipherSuite] = []
         while cipherData.isEmpty.not {
             CipherSuite(data: cipherData.consume(bytes: 2))
@@ -54,10 +56,10 @@ class ClientHello {
         }
         supportedCiphers = ciphers
         // compression methods
-        let compressionMethodsData = record.body.consume(bytes: try record.body.consume(bytes: 1).int)
-        compressionMethods = compressionMethodsData.bytes.compactMap { CompressionMethod(rawValue: $0) }
+        let compressionMethodsData = body.consume(bytes: try body.consume(bytes: 1).int)
+        compressionMethods = compressionMethodsData.array.compactMap { CompressionMethod(rawValue: $0) }
         // extensions
-        var extensionsData = record.body.consume(bytes: try record.body.consume(bytes: 2).int)
+        var extensionsData = body.consume(bytes: try body.consume(bytes: 2).int)
         var extensions: [TLSExtension] = []
         while extensionsData.isEmpty.not {
             TLSExtension(type: extensionsData.consume(bytes: 2),

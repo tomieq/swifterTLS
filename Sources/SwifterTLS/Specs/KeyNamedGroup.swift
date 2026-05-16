@@ -6,7 +6,7 @@
 //
 
 enum KeyNamedGroup: UInt16 {
-    case secp256r1 = 0x17
+    case secp256r1 = 0x17 // most popular
     case secp384r1 = 0x18
     case secp521r1 = 0x19
     

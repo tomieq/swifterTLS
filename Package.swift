@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "SwifterTLS",
     platforms: [
-        .macOS(.v10_15)
+        .macOS(.v11)
     ],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
@@ -17,7 +17,7 @@ let package = Package(
                     targets: ["Demo"])
     ],
     dependencies: [
-        .package(url: "https://github.com/tomieq/swifter.git", branch: "tls"),
+        .package(url: "https://github.com/tomieq/swifter.git", from: "3.2.0"),
         .package(url: "https://github.com/tomieq/SwiftExtensions", branch: "master"),
         .package(url: "https://github.com/apple/swift-crypto.git", .upToNextMajor(from: "3.12.3"))
     ],

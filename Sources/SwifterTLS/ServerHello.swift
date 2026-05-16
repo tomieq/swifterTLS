@@ -37,7 +37,7 @@ class ServerHello {
 }
 
 extension ServerHello {
-    var data: Data {
+    var handshakeData: Data {
         var extensionsBody = Data()
         extensions.forEach {
             extensionsBody.append($0.data)
@@ -55,6 +55,10 @@ extension ServerHello {
         let body = HandshakeType.serverHello.rawValue.data
             .appending(asThreeBytes: message.count)
             .appending(message)
-        return Record(recordType: .handshake, version: recordVersion, body: body).data
+        return body
+    }
+
+    var data: Data {
+        Record(recordType: .handshake, version: recordVersion, body: handshakeData).data
     }
 }
