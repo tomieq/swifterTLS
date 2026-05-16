@@ -27,8 +27,8 @@ Add SwifterTLS to your `Package.swift` dependencies:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/tomieq/swifterTLS.git", branch: "master"),
-    .package(url: "https://github.com/tomieq/swifter.git", branch: "tls")
+    .package(url: "https://github.com/tomieq/swifterTLS.git", from: "1.0.0"),
+    .package(url: "https://github.com/tomieq/swifter.git", from: "3.2.0")
 ]
 ```
 
