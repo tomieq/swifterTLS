@@ -18,7 +18,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/tomieq/swifter.git", from: "3.2.0"),
-        .package(url: "https://github.com/tomieq/SwiftExtensions", branch: "master"),
+        .package(url: "https://github.com/tomieq/SwiftExtensions", from: "2.0.0"),
         .package(url: "https://github.com/apple/swift-crypto.git", .upToNextMajor(from: "3.12.3"))
     ],
     targets: [
@@ -36,6 +36,6 @@ let package = Package(
             dependencies: ["SwifterTLS"]
         ),
         .executableTarget(name: "Demo",
-                         dependencies: ["SwifterTLS"])
+                          dependencies: ["SwifterTLS"])
     ]
 )
