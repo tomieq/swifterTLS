@@ -16,7 +16,7 @@ public class TLSSocket: SecureSocket {
         socket
     }
 
-    public init(_ socket: Socket, tlsConfiguration: TLSConfiguration) {
+    public init?(_ socket: Socket, tlsConfiguration: TLSConfiguration) {
         self.socket = socket
         self.tlsConfiguration = tlsConfiguration
         do {
@@ -24,6 +24,7 @@ public class TLSSocket: SecureSocket {
         } catch {
             print("TLS handshake failed: \(error)")
             socket.close()
+            return nil
         }
     }
 
