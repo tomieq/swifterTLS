@@ -8,7 +8,7 @@ It is useful when you want to run a local or embedded Swift HTTP server over HTT
 
 - TLS 1.3 server-side handshake
 - `TLS_AES_128_GCM_SHA256`
-- X25519 key exchange
+- X25519, P-256, P-384, and P-521 key exchange through Swift Crypto
 - ECDSA P-256 certificate authentication with `ecdsa_secp256r1_sha256`
 - PEM encoded PKCS#8 private keys
 - Single certificate or PEM certificate chain support
@@ -18,6 +18,8 @@ It is useful when you want to run a local or embedded Swift HTTP server over HTT
 
 - Swift 5.10+
 - macOS 11+
+- iOS 14+
+- Linux with Swift Crypto support
 - A Swifter server using the `tls` branch compatible with this package
 - A P-256 ECDSA private key and matching certificate
 
@@ -139,7 +141,7 @@ SwifterTLS currently implements a focused subset of TLS 1.3 for server use:
 - Server-side sockets only
 - One configured certificate identity per process
 - P-256 ECDSA certificates only
-- X25519 key share only
+- X25519, P-256, P-384, and P-521 key shares
 - `TLS_AES_128_GCM_SHA256` only
 - No client certificate authentication
 - No ALPN negotiation

@@ -77,3 +77,72 @@ private let testTLSConfiguration = TLSConfiguration(
         #expect(try message.consume(bytes: 2).int == 0)
     }
 }
+
+@Test func supportedKeyShareGroupsDeriveMatchingSecrets() throws {
+    for namedGroup in KeyNamedGroup.supportedKeyShareGroups {
+        let clientKeyShare = try makeClientKeyShare(for: namedGroup)
+        let serverKeyShare = try TLSKeyExchange.serverKeyShare(for: namedGroup)
+
+        let serverSecret = try serverKeyShare.sharedSecret(with: clientKeyShare.publicKey)
+        let clientSecret = try clientKeyShare.sharedSecretFromServerKey(serverKeyShare.publicKey)
+
+        #expect(secretFingerprint(serverSecret) == secretFingerprint(clientSecret))
+    }
+}
+
+private struct TestClientKeyShare {
+    let publicKey: Data
+    let sharedSecretFromServerKey: (Data) throws -> SharedSecret
+}
+
+private func makeClientKeyShare(for namedGroup: KeyNamedGroup) throws -> TestClientKeyShare {
+    switch namedGroup {
+    case .x25519:
+        let privateKey = Curve25519.KeyAgreement.PrivateKey()
+        return TestClientKeyShare(
+            publicKey: privateKey.publicKey.rawRepresentation,
+            sharedSecretFromServerKey: { serverPublicKey in
+                let publicKey = try Curve25519.KeyAgreement.PublicKey(rawRepresentation: serverPublicKey)
+                return try privateKey.sharedSecretFromKeyAgreement(with: publicKey)
+            }
+        )
+    case .secp256r1:
+        let privateKey = P256.KeyAgreement.PrivateKey()
+        return TestClientKeyShare(
+            publicKey: privateKey.publicKey.x963Representation,
+            sharedSecretFromServerKey: { serverPublicKey in
+                let publicKey = try P256.KeyAgreement.PublicKey(x963Representation: serverPublicKey)
+                return try privateKey.sharedSecretFromKeyAgreement(with: publicKey)
+            }
+        )
+    case .secp384r1:
+        let privateKey = P384.KeyAgreement.PrivateKey()
+        return TestClientKeyShare(
+            publicKey: privateKey.publicKey.x963Representation,
+            sharedSecretFromServerKey: { serverPublicKey in
+                let publicKey = try P384.KeyAgreement.PublicKey(x963Representation: serverPublicKey)
+                return try privateKey.sharedSecretFromKeyAgreement(with: publicKey)
+            }
+        )
+    case .secp521r1:
+        let privateKey = P521.KeyAgreement.PrivateKey()
+        return TestClientKeyShare(
+            publicKey: privateKey.publicKey.x963Representation,
+            sharedSecretFromServerKey: { serverPublicKey in
+                let publicKey = try P521.KeyAgreement.PublicKey(x963Representation: serverPublicKey)
+                return try privateKey.sharedSecretFromKeyAgreement(with: publicKey)
+            }
+        )
+    default:
+        throw TLS13Error.unsupportedKeyShare
+    }
+}
+
+private func secretFingerprint(_ sharedSecret: SharedSecret) -> Data {
+    sharedSecret.hkdfDerivedSymmetricKey(
+        using: SHA256.self,
+        salt: Data(),
+        sharedInfo: Data(),
+        outputByteCount: 32
+    ).data
+}

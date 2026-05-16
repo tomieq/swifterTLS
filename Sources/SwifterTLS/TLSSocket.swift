@@ -32,8 +32,8 @@ public class TLSSocket: SecureSocket {
         let clientHello = try ClientHello(socket)
         try validate(clientHello)
 
-        let serverKeySharePrivateKey = Curve25519.KeyAgreement.PrivateKey()
-        let serverKeySharePublicKey = serverKeySharePrivateKey.publicKey.rawRepresentation
+        let clientKeyShare = try self.selectClientKeyShare(from: clientHello)
+        let serverKeyShare = try TLSKeyExchange.serverKeyShare(for: clientKeyShare.namedGroup)
         let serverHello = ServerHello(
             recordVersion: .v1_2,
             serverHelloVersion: .v1_2,
@@ -45,20 +45,15 @@ public class TLSSocket: SecureSocket {
                 TLSExtension(type: ExtensionName.supportedVersions.data, body: TLSVersion.v1_3.data),
                 TLSExtension(
                     type: ExtensionName.keyShare.data,
-                    body: KeyNamedGroup.x25519.data
-                        .appending(asTwoBytes: serverKeySharePublicKey.count)
-                        .appending(serverKeySharePublicKey)
+                    body: serverKeyShare.namedGroup.data
+                        .appending(asTwoBytes: serverKeyShare.publicKey.count)
+                        .appending(serverKeyShare.publicKey)
                 )
             ]
         )
         try self.socket.writeData(serverHello.data)
 
-        let clientPublicKeyData = try clientHello.clientKeys
-            .first { $0.namedGroup == .x25519 }
-            .map { $0.key }
-            .orThrow(TLS13Error.unsupportedKeyShare)
-        let clientPublicKey = try Curve25519.KeyAgreement.PublicKey(rawRepresentation: clientPublicKeyData)
-        let sharedSecret = try serverKeySharePrivateKey.sharedSecretFromKeyAgreement(with: clientPublicKey)
+        let sharedSecret = try serverKeyShare.sharedSecret(with: clientKeyShare.key)
 
         var transcript = clientHello.handshakeData + serverHello.handshakeData
         let handshakeSecrets = TLS13KeySchedule.handshakeTrafficSecrets(
@@ -115,12 +110,25 @@ public class TLSSocket: SecureSocket {
         guard clientHello.supportedCiphers.contains(.TLS_AES_128_GCM_SHA256) else {
             throw TLS13Error.unsupportedCipherSuite
         }
-        guard try clientHello.clientKeys.contains(where: { $0.namedGroup == .x25519 }) else {
-            throw TLS13Error.unsupportedKeyShare
-        }
+        _ = try self.selectClientKeyShare(from: clientHello)
         guard try clientHello.signatureAlgorithms.contains(TLS13HandshakeMessage.ecdsaSecp256r1Sha256) else {
             throw TLS13Error.unsupportedSignatureScheme
         }
+    }
+
+    private func selectClientKeyShare(from clientHello: ClientHello) throws -> ClientKeyShare {
+        let clientKeyShares = try clientHello.clientKeys
+        let clientSupportedGroups = try clientHello.supportedGroups
+        let supportedGroups = KeyNamedGroup.supportedKeyShareGroups.filter { group in
+            clientSupportedGroups.isEmpty || clientSupportedGroups.contains(group)
+        }
+
+        return try supportedGroups
+            .compactMap { supportedGroup in
+                clientKeyShares.first { $0.namedGroup == supportedGroup }
+            }
+            .first
+            .orThrow(TLS13Error.unsupportedKeyShare)
     }
 
     private func sendEncryptedHandshake(_ handshakeMessage: Data, using cipher: inout TLS13CipherState) throws {

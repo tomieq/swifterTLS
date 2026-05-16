@@ -28,8 +28,15 @@ enum KeyNamedGroup: UInt16 {
 }
 
 extension KeyNamedGroup {
+    static let supportedKeyShareGroups: [KeyNamedGroup] = [
+        .x25519,
+        .secp256r1,
+        .secp384r1,
+        .secp521r1
+    ]
+
     var isSupported: Bool {
-        [.x25519].contains(self)
+        Self.supportedKeyShareGroups.contains(self)
     }
 }
 
