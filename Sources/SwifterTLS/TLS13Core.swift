@@ -3,6 +3,7 @@ import Foundation
 import SwiftExtensions
 
 enum TLS13Error: Error {
+    case missingConfiguration
     case missingExtension(ExtensionName)
     case unsupportedCipherSuite
     case unsupportedKeyShare
