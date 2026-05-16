@@ -42,9 +42,9 @@ struct TLS13CipherState {
         let header = RecordType.applicationData.data
             .appending(TLSVersion.v1_2)
             .appending(asTwoBytes: encryptedLength)
-        let nonce = try AES.GCM.Nonce(data: nonceBytes())
-        let sealedBox = try AES.GCM.seal(innerPlaintext, using: keySet.key, nonce: nonce, authenticating: header)
-        sequenceNumber += 1
+        let nonce = try AES.GCM.Nonce(data: self.nonceBytes())
+        let sealedBox = try AES.GCM.seal(innerPlaintext, using: self.keySet.key, nonce: nonce, authenticating: header)
+        self.sequenceNumber += 1
         return Record(recordType: .applicationData, version: .v1_2, body: sealedBox.ciphertext + sealedBox.tag)
     }
 
@@ -53,23 +53,23 @@ struct TLS13CipherState {
             throw TLS13Error.invalidEncryptedRecord
         }
 
-        let header = Data([record.recordType.rawValue])
+        let header = record.recordType.data
             .appending(record.version)
             .appending(asTwoBytes: record.body.count)
         let tagStart = record.body.index(record.body.endIndex, offsetBy: -16)
         let ciphertext = record.body[..<tagStart]
         let tag = record.body[tagStart...]
-        let sealedBox = try AES.GCM.SealedBox(nonce: AES.GCM.Nonce(data: nonceBytes()), ciphertext: ciphertext, tag: tag)
-        let innerPlaintext = try AES.GCM.open(sealedBox, using: keySet.key, authenticating: header)
-        sequenceNumber += 1
+        let sealedBox = try AES.GCM.SealedBox(nonce: AES.GCM.Nonce(data: self.nonceBytes()), ciphertext: ciphertext, tag: tag)
+        let innerPlaintext = try AES.GCM.open(sealedBox, using: self.keySet.key, authenticating: header)
+        self.sequenceNumber += 1
         return try TLS13CipherState.parseInnerPlaintext(innerPlaintext)
     }
 
     private func nonceBytes() -> Data {
         var paddedSequence = Data(repeating: 0, count: keySet.iv.count - MemoryLayout<UInt64>.size)
-        var bigEndianSequence = sequenceNumber.bigEndian
+        var bigEndianSequence = self.sequenceNumber.bigEndian
         paddedSequence.append(Data(bytes: &bigEndianSequence, count: MemoryLayout<UInt64>.size))
-        return Data(zip(keySet.iv, paddedSequence).map { $0 ^ $1 })
+        return Data(zip(self.keySet.iv, paddedSequence).map { $0 ^ $1 })
     }
 
     private static func parseInnerPlaintext(_ data: Data) throws -> (contentType: TLS13ContentType, plaintext: Data) {
@@ -93,31 +93,31 @@ enum TLS13KeySchedule {
     static func handshakeTrafficSecrets(sharedSecret: SharedSecret, transcriptHash: Data) -> (client: SymmetricKey, server: SymmetricKey, handshakeSecret: SymmetricKey) {
         let zero = Data(repeating: 0, count: hashLength)
         let earlySecret = HKDF<SHA256>.extract(inputKeyMaterial: SymmetricKey(data: zero), salt: zero)
-        let derivedSecret = deriveSecret(secret: SymmetricKey(data: earlySecret), label: "derived", messages: Data())
+        let derivedSecret = self.deriveSecret(secret: SymmetricKey(data: earlySecret), label: "derived", messages: Data())
         let handshakeSecret = HKDF<SHA256>.extract(inputKeyMaterial: SymmetricKey(data: sharedSecret), salt: derivedSecret.data)
-        let clientSecret = hkdfExpandLabel(secret: SymmetricKey(data: handshakeSecret), label: "c hs traffic", context: transcriptHash, length: hashLength)
-        let serverSecret = hkdfExpandLabel(secret: SymmetricKey(data: handshakeSecret), label: "s hs traffic", context: transcriptHash, length: hashLength)
+        let clientSecret = self.hkdfExpandLabel(secret: SymmetricKey(data: handshakeSecret), label: "c hs traffic", context: transcriptHash, length: self.hashLength)
+        let serverSecret = self.hkdfExpandLabel(secret: SymmetricKey(data: handshakeSecret), label: "s hs traffic", context: transcriptHash, length: self.hashLength)
         return (clientSecret, serverSecret, SymmetricKey(data: handshakeSecret))
     }
 
     static func applicationTrafficSecrets(handshakeSecret: SymmetricKey, transcriptHash: Data) -> (client: SymmetricKey, server: SymmetricKey) {
         let zero = Data(repeating: 0, count: hashLength)
-        let derivedSecret = deriveSecret(secret: handshakeSecret, label: "derived", messages: Data())
+        let derivedSecret = self.deriveSecret(secret: handshakeSecret, label: "derived", messages: Data())
         let masterSecret = HKDF<SHA256>.extract(inputKeyMaterial: SymmetricKey(data: zero), salt: derivedSecret.data)
-        let clientSecret = hkdfExpandLabel(secret: SymmetricKey(data: masterSecret), label: "c ap traffic", context: transcriptHash, length: hashLength)
-        let serverSecret = hkdfExpandLabel(secret: SymmetricKey(data: masterSecret), label: "s ap traffic", context: transcriptHash, length: hashLength)
+        let clientSecret = self.hkdfExpandLabel(secret: SymmetricKey(data: masterSecret), label: "c ap traffic", context: transcriptHash, length: self.hashLength)
+        let serverSecret = self.hkdfExpandLabel(secret: SymmetricKey(data: masterSecret), label: "s ap traffic", context: transcriptHash, length: self.hashLength)
         return (clientSecret, serverSecret)
     }
 
     static func keySet(trafficSecret: SymmetricKey) -> TLS13KeySet {
         TLS13KeySet(
-            key: hkdfExpandLabel(secret: trafficSecret, label: "key", context: Data(), length: 16),
-            iv: hkdfExpandLabel(secret: trafficSecret, label: "iv", context: Data(), length: 12).data
+            key: self.hkdfExpandLabel(secret: trafficSecret, label: "key", context: Data(), length: 16),
+            iv: self.hkdfExpandLabel(secret: trafficSecret, label: "iv", context: Data(), length: 12).data
         )
     }
 
     static func finishedVerifyData(trafficSecret: SymmetricKey, transcriptHash: Data) -> Data {
-        let finishedKey = hkdfExpandLabel(secret: trafficSecret, label: "finished", context: Data(), length: hashLength)
+        let finishedKey = self.hkdfExpandLabel(secret: trafficSecret, label: "finished", context: Data(), length: self.hashLength)
         return Data(HMAC<SHA256>.authenticationCode(for: transcriptHash, using: finishedKey))
     }
 
@@ -126,7 +126,7 @@ enum TLS13KeySchedule {
     }
 
     private static func deriveSecret(secret: SymmetricKey, label: String, messages: Data) -> SymmetricKey {
-        hkdfExpandLabel(secret: secret, label: label, context: transcriptHash(messages), length: hashLength)
+        self.hkdfExpandLabel(secret: secret, label: label, context: self.transcriptHash(messages), length: self.hashLength)
     }
 
     private static func hkdfExpandLabel(secret: SymmetricKey, label: String, context: Data, length: Int) -> SymmetricKey {
@@ -150,7 +150,7 @@ enum TLS13HandshakeMessage {
         let message = Data()
             .appending(asTwoBytes: extensionsBody.count)
             .appending(extensionsBody)
-        return handshake(type: .encryptedExtensions, message: message)
+        return self.handshake(type: .encryptedExtensions, message: message)
     }
 
     static func certificate(derCertificates: [Data]) -> Data {
@@ -165,11 +165,11 @@ enum TLS13HandshakeMessage {
         let message = Data([0])
             .appending(asThreeBytes: certificateEntry.count)
             .appending(certificateEntry)
-        return handshake(type: .certificate, message: message)
+        return self.handshake(type: .certificate, message: message)
     }
 
     static func certificate(derCertificate: Data) -> Data {
-        certificate(derCertificates: [derCertificate])
+        self.certificate(derCertificates: [derCertificate])
     }
 
     static func certificateVerify(privateKey: P256.Signing.PrivateKey, transcriptHash: Data) throws -> Data {
@@ -178,14 +178,14 @@ enum TLS13HandshakeMessage {
             + Data([0])
             + transcriptHash
         let signature = try privateKey.signature(for: context).derRepresentation
-        let message = ecdsaSecp256r1Sha256
+        let message = self.ecdsaSecp256r1Sha256
             .appending(asTwoBytes: signature.count)
             .appending(signature)
-        return handshake(type: .certificateVerify, message: message)
+        return self.handshake(type: .certificateVerify, message: message)
     }
 
     static func finished(verifyData: Data) -> Data {
-        handshake(type: .finished, message: verifyData)
+        self.handshake(type: .finished, message: verifyData)
     }
 
     private static func handshake(type: HandshakeType, message: Data) -> Data {
@@ -194,8 +194,6 @@ enum TLS13HandshakeMessage {
             .appending(message)
     }
 }
-
-
 
 extension SymmetricKey {
     var data: Data {

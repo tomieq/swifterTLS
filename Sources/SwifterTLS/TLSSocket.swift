@@ -13,14 +13,14 @@ public class TLSSocket: SecureSocket {
 
     public let id: UUID = UUID()
     public var raw: Socket {
-        socket
+        self.socket
     }
 
     public init?(_ socket: Socket, tlsConfiguration: TLSConfiguration) {
         self.socket = socket
         self.tlsConfiguration = tlsConfiguration
         do {
-            try performHandshake()
+            try self.performHandshake()
         } catch {
             print("TLS handshake failed: \(error)")
             socket.close()
@@ -51,7 +51,7 @@ public class TLSSocket: SecureSocket {
                 )
             ]
         )
-        try socket.writeData(serverHello.data)
+        try self.socket.writeData(serverHello.data)
 
         let clientPublicKeyData = try clientHello.clientKeys
             .first { $0.namedGroup == .x25519 }
@@ -68,22 +68,22 @@ public class TLSSocket: SecureSocket {
         var clientHandshakeCipher = TLS13CipherState(keySet: TLS13KeySchedule.keySet(trafficSecret: handshakeSecrets.client))
         var serverHandshakeCipher = TLS13CipherState(keySet: TLS13KeySchedule.keySet(trafficSecret: handshakeSecrets.server))
 
-        let certificatePrivateKey = try P256.Signing.PrivateKey(derRepresentation: PEMDecoder.decode(tlsConfiguration.privateKeyPEM))
-        let certificateDERChain = try PEMDecoder.decodeCertificates(tlsConfiguration.certificatePEM)
+        let certificatePrivateKey = try P256.Signing.PrivateKey(derRepresentation: PEMDecoder.decode(self.tlsConfiguration.privateKeyPEM))
+        let certificateDERChain = try PEMDecoder.decodeCertificates(self.tlsConfiguration.certificatePEM)
 
         let encryptedExtensions = TLS13HandshakeMessage.encryptedExtensions()
-        try sendEncryptedHandshake(encryptedExtensions, using: &serverHandshakeCipher)
+        try self.sendEncryptedHandshake(encryptedExtensions, using: &serverHandshakeCipher)
         transcript.append(encryptedExtensions)
 
         let certificate = TLS13HandshakeMessage.certificate(derCertificates: certificateDERChain)
-        try sendEncryptedHandshake(certificate, using: &serverHandshakeCipher)
+        try self.sendEncryptedHandshake(certificate, using: &serverHandshakeCipher)
         transcript.append(certificate)
 
         let certificateVerify = try TLS13HandshakeMessage.certificateVerify(
             privateKey: certificatePrivateKey,
             transcriptHash: TLS13KeySchedule.transcriptHash(transcript)
         )
-        try sendEncryptedHandshake(certificateVerify, using: &serverHandshakeCipher)
+        try self.sendEncryptedHandshake(certificateVerify, using: &serverHandshakeCipher)
         transcript.append(certificateVerify)
 
         let serverFinished = TLS13HandshakeMessage.finished(
@@ -92,7 +92,7 @@ public class TLSSocket: SecureSocket {
                 transcriptHash: TLS13KeySchedule.transcriptHash(transcript)
             )
         )
-        try sendEncryptedHandshake(serverFinished, using: &serverHandshakeCipher)
+        try self.sendEncryptedHandshake(serverFinished, using: &serverHandshakeCipher)
         transcript.append(serverFinished)
 
         let applicationSecrets = TLS13KeySchedule.applicationTrafficSecrets(
@@ -101,11 +101,11 @@ public class TLSSocket: SecureSocket {
         )
 
         let clientFinished = try readEncryptedHandshake(using: &clientHandshakeCipher)
-        try verifyClientFinished(clientFinished, trafficSecret: handshakeSecrets.client, transcript: transcript)
+        try self.verifyClientFinished(clientFinished, trafficSecret: handshakeSecrets.client, transcript: transcript)
         transcript.append(clientFinished)
 
-        readCipher = TLS13CipherState(keySet: TLS13KeySchedule.keySet(trafficSecret: applicationSecrets.client))
-        writeCipher = TLS13CipherState(keySet: TLS13KeySchedule.keySet(trafficSecret: applicationSecrets.server))
+        self.readCipher = TLS13CipherState(keySet: TLS13KeySchedule.keySet(trafficSecret: applicationSecrets.client))
+        self.writeCipher = TLS13CipherState(keySet: TLS13KeySchedule.keySet(trafficSecret: applicationSecrets.server))
     }
 
     private func validate(_ clientHello: ClientHello) throws {
@@ -125,7 +125,7 @@ public class TLSSocket: SecureSocket {
 
     private func sendEncryptedHandshake(_ handshakeMessage: Data, using cipher: inout TLS13CipherState) throws {
         let record = try cipher.seal(handshakeMessage, contentType: .handshake)
-        try socket.writeData(record.data)
+        try self.socket.writeData(record.data)
     }
 
     private func readEncryptedHandshake(using cipher: inout TLS13CipherState) throws -> Data {
@@ -167,17 +167,17 @@ public class TLSSocket: SecureSocket {
     }
 
     public func read() throws -> UInt8 {
-        while plaintextBuffer.isEmpty {
-            try readApplicationData()
+        while self.plaintextBuffer.isEmpty {
+            try self.readApplicationData()
         }
-        return plaintextBuffer.consume(bytes: 1).first!
+        return self.plaintextBuffer.consume(bytes: 1).first!
     }
 
     public func readLine() throws -> String {
         var characters = ""
         var byte: UInt8 = 0
         repeat {
-            byte = try read()
+            byte = try self.read()
             if byte > 13 {
                 characters.append(Character(UnicodeScalar(byte)))
             }
@@ -186,10 +186,10 @@ public class TLSSocket: SecureSocket {
     }
 
     public func read(length: Int) throws -> [UInt8] {
-        while plaintextBuffer.count < length {
-            try readApplicationData()
+        while self.plaintextBuffer.count < length {
+            try self.readApplicationData()
         }
-        return Array(plaintextBuffer.consume(bytes: length))
+        return Array(self.plaintextBuffer.consume(bytes: length))
     }
 
     private func readApplicationData() throws {
@@ -198,12 +198,12 @@ public class TLSSocket: SecureSocket {
         }
         let record = try readTLSRecordSkippingCompatibilityRecords()
         let opened = try cipher.open(record)
-        readCipher = cipher
+        self.readCipher = cipher
         switch opened.contentType {
         case .applicationData:
-            plaintextBuffer.append(opened.plaintext)
+            self.plaintextBuffer.append(opened.plaintext)
         case .alert:
-            close()
+            self.close()
             throw TLS13Error.invalidEncryptedRecord
         default:
             break
@@ -211,15 +211,15 @@ public class TLSSocket: SecureSocket {
     }
 
     public func writeUTF8(_ string: String) throws {
-        try writeData(Data(string.utf8))
+        try self.writeData(Data(string.utf8))
     }
 
     public func writeUInt8(_ data: [UInt8]) throws {
-        try writeData(Data(data))
+        try self.writeData(Data(data))
     }
 
     public func writeUInt8(_ data: ArraySlice<UInt8>) throws {
-        try writeData(Data(data))
+        try self.writeData(Data(data))
     }
 
     public func writeData(_ data: Data) throws {
@@ -230,14 +230,14 @@ public class TLSSocket: SecureSocket {
         while offset < data.count {
             let chunkEnd = min(offset + 16_384, data.count)
             let record = try cipher.seal(data[offset..<chunkEnd], contentType: .applicationData)
-            try socket.writeData(record.data)
+            try self.socket.writeData(record.data)
             offset = chunkEnd
         }
-        writeCipher = cipher
+        self.writeCipher = cipher
     }
 
     public func writeData(_ data: NSData) throws {
-        try writeData(data as Data)
+        try self.writeData(data as Data)
     }
 
     public func writeFile(_ file: String.File) throws {
@@ -247,15 +247,15 @@ public class TLSSocket: SecureSocket {
             if count == 0 {
                 return
             }
-            try writeUInt8(buffer.prefix(count))
+            try self.writeUInt8(buffer.prefix(count))
         }
     }
 
     public func close() {
-        socket.close()
+        self.socket.close()
     }
 
     public var peerIP: String? {
-        nil
+        self.socket.peerIP
     }
 }
