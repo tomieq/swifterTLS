@@ -2,6 +2,7 @@ import Crypto
 import Foundation
 import SwiftExtensions
 import Swifter
+import Logger
 
 public class TLSSocket: SecureSocket {
     private let tlsConfiguration: TLSConfiguration
@@ -10,6 +11,7 @@ public class TLSSocket: SecureSocket {
     private var readCipher: TLS13CipherState?
     private var writeCipher: TLS13CipherState?
     private var plaintextBuffer = Data()
+    private let logger = Logger(TLSSocket.self)
 
     public let id: UUID = UUID()
     public var raw: Socket {
@@ -22,7 +24,7 @@ public class TLSSocket: SecureSocket {
         do {
             try self.performHandshake()
         } catch {
-            print("TLS handshake failed: \(error)")
+            logger.e("TLS handshake from \(socket.peerIP.readable) failed: \(error)")
             socket.close()
             return nil
         }

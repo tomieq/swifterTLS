@@ -18,9 +18,10 @@ let package = Package(
                     targets: ["Demo"])
     ],
     dependencies: [
-        .package(url: "https://github.com/tomieq/swifter.git", from: "3.2.0"),
+        .package(url: "https://github.com/tomieq/swifter.git", branch: "develop"),//full-async-approach
         .package(url: "https://github.com/tomieq/SwiftExtensions", from: "2.0.0"),
-        .package(url: "https://github.com/apple/swift-crypto.git", .upToNextMajor(from: "3.12.3"))
+        .package(url: "https://github.com/apple/swift-crypto.git", .upToNextMajor(from: "3.12.3")),
+        .package(url: "https://github.com/tomieq/Logger.git", .upToNextMajor(from: "1.2.0")),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -30,7 +31,8 @@ let package = Package(
             dependencies: [
                 .product(name: "Swifter", package: "Swifter"),
                 .product(name: "SwiftExtensions", package: "SwiftExtensions"),
-                .product(name: "Crypto", package: "swift-crypto")
+                .product(name: "Crypto", package: "swift-crypto"),
+                .product(name: "Logger", package: "Logger"),
             ]),
         .testTarget(
             name: "SwifterTLSTests",
