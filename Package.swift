@@ -18,7 +18,7 @@ let package = Package(
                     targets: ["Demo"])
     ],
     dependencies: [
-        .package(url: "https://github.com/tomieq/swifter.git", branch: "develop"),//full-async-approach
+        .package(url: "https://github.com/tomieq/swifter.git", from: "4.0.0"),
         .package(url: "https://github.com/tomieq/SwiftExtensions", from: "2.0.0"),
         .package(url: "https://github.com/apple/swift-crypto.git", .upToNextMajor(from: "3.12.3")),
         .package(url: "https://github.com/tomieq/Logger.git", .upToNextMajor(from: "1.2.0")),
